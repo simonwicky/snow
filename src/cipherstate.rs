@@ -5,8 +5,8 @@ use crate::{
 };
 
 pub(crate) struct CipherState {
-    cipher:  Box<dyn Cipher>,
-    n:       u64,
+    cipher: Box<dyn Cipher>,
+    n: u64,
     has_key: bool,
 }
 
@@ -39,7 +39,7 @@ impl CipherState {
         let len = self.cipher.encrypt(self.n, authtext, plaintext, out);
 
         // We have validated this will not wrap around.
-        self.n += 1;
+        //self.n += 1;
 
         Ok(len)
     }
@@ -62,7 +62,7 @@ impl CipherState {
         let len = self.cipher.decrypt(self.n, authtext, ciphertext, out);
 
         // We have validated this will not wrap around.
-        self.n += 1;
+        //self.n += 1;
 
         len
     }
@@ -121,7 +121,7 @@ impl CipherStates {
 }
 
 pub(crate) struct StatelessCipherState {
-    cipher:  Box<dyn Cipher>,
+    cipher: Box<dyn Cipher>,
     has_key: bool,
 }
 
