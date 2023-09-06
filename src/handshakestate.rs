@@ -27,22 +27,22 @@ use std::{
 ///
 /// See: <https://noiseprotocol.org/noise.html#the-handshakestate-object>
 pub struct HandshakeState {
-    pub(crate) rng:              Box<dyn Random>,
-    pub(crate) symmetricstate:   SymmetricState,
-    pub(crate) cipherstates:     CipherStates,
-    pub(crate) s:                Toggle<Box<dyn Dh>>,
-    pub(crate) e:                Toggle<Box<dyn Dh>>,
-    pub(crate) fixed_ephemeral:  bool,
-    pub(crate) rs:               Toggle<[u8; MAXDHLEN]>,
-    pub(crate) re:               Toggle<[u8; MAXDHLEN]>,
-    pub(crate) initiator:        bool,
-    pub(crate) params:           NoiseParams,
-    pub(crate) psks:             [Option<[u8; PSKLEN]>; 10],
+    pub(crate) rng: Box<dyn Random>,
+    pub(crate) symmetricstate: SymmetricState,
+    pub(crate) cipherstates: CipherStates,
+    pub(crate) s: Toggle<Box<dyn Dh>>,
+    pub(crate) e: Toggle<Box<dyn Dh>>,
+    pub(crate) fixed_ephemeral: bool,
+    pub(crate) rs: Toggle<[u8; MAXDHLEN]>,
+    pub(crate) re: Toggle<[u8; MAXDHLEN]>,
+    pub(crate) initiator: bool,
+    pub(crate) params: NoiseParams,
+    pub(crate) psks: [Option<[u8; PSKLEN]>; 10],
     #[cfg(feature = "hfs")]
-    pub(crate) kem:              Option<Box<dyn Kem>>,
+    pub(crate) kem: Option<Box<dyn Kem>>,
     #[cfg(feature = "hfs")]
-    pub(crate) kem_re:           Option<[u8; MAXKEMPUBLEN]>,
-    pub(crate) my_turn:          bool,
+    pub(crate) kem_re: Option<[u8; MAXKEMPUBLEN]>,
+    pub(crate) my_turn: bool,
     pub(crate) message_patterns: MessagePatterns,
     pub(crate) pattern_position: usize,
 }
@@ -255,6 +255,7 @@ impl HandshakeState {
                     byte_index += self
                         .symmetricstate
                         .encrypt_and_mix_hash(self.s.pubkey(), &mut message[byte_index..])?;
+                    self.symmetricstate.set_nonce(0u64);
                 },
                 Token::Psk(n) => match self.psks[*n as usize] {
                     Some(psk) => {
@@ -316,6 +317,8 @@ impl HandshakeState {
         }
         if self.pattern_position == (self.message_patterns.len() - 1) {
             self.symmetricstate.split(&mut self.cipherstates.0, &mut self.cipherstates.1);
+        } else {
+            self.symmetricstate.set_nonce(0u64);
         }
         Ok(byte_index)
     }
@@ -388,6 +391,7 @@ impl HandshakeState {
                         temp
                     };
                     self.symmetricstate.decrypt_and_mix_hash(data, &mut self.rs[..dh_len])?;
+                    self.symmetricstate.set_nonce(0u64);
                     self.rs.enable();
                 },
                 Token::Psk(n) => match self.psks[*n as usize] {
@@ -445,6 +449,8 @@ impl HandshakeState {
         self.symmetricstate.decrypt_and_mix_hash(ptr, payload)?;
         if last {
             self.symmetricstate.split(&mut self.cipherstates.0, &mut self.cipherstates.1);
+        } else {
+            self.symmetricstate.set_nonce(0u64);
         }
         let payload_len =
             if self.symmetricstate.has_key() { ptr.len() - TAGLEN } else { ptr.len() };

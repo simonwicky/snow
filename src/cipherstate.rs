@@ -39,7 +39,7 @@ impl CipherState {
         let len = self.cipher.encrypt(self.n, authtext, plaintext, out);
 
         // We have validated this will not wrap around.
-        //self.n += 1;
+        self.n += 1;
 
         Ok(len)
     }
@@ -62,7 +62,7 @@ impl CipherState {
         let len = self.cipher.decrypt(self.n, authtext, ciphertext, out);
 
         // We have validated this will not wrap around.
-        //self.n += 1;
+        self.n += 1;
 
         len
     }
